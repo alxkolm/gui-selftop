@@ -23,7 +23,10 @@
         loading: false,
         chart: {
           title: {
-            text: this.title
+            text: this.title,
+            textStyle: {
+              color: '#bbb'
+            }
           },
           tooltip: {
             trigger: 'item',
@@ -61,7 +64,7 @@
 
 <style scoped>
   .echarts {
-    width: 400px;
-    height: 400px;
+    width: 300px;
+    height: 300px;
   }
 </style>
