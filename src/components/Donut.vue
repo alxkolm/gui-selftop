@@ -32,13 +32,16 @@
           series: [{
             name: this.seriesName,
             type: 'pie',
-            radius: ['50%', '60%'],
+            radius: ['40%', '70%'],
             data: this.seriesData,
             avoidLabelOverlap: true,
             label: {
               normal: {
                 show: true,
-                position: 'outside'
+                position: 'inner',
+                formatter: (params) => {
+                  return params.percent > 10 ? params.name : ''
+                }
               },
               emphasis: {
                 show: true
