@@ -10,7 +10,8 @@ export default new Vuex.Store({
     records: [],
     processes: [],
     mclClusters: {},
-    titleClusters: {}
+    titleClusters: {},
+    windowsList: []
   },
   mutations,
   actions

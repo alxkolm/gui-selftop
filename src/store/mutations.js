@@ -5,5 +5,9 @@ export default {
     state.processes = newData.processes
     state.titleClusters = newData.titleClusters
     state.mclClusters = newData.mclClusters
+  },
+
+  setWindowsList (state, newData) {
+    state.windowsList = newData
   }
 }

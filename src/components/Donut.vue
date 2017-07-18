@@ -1,6 +1,6 @@
 <template>
   <div class="echarts">
-    <IEcharts :option="chart"></IEcharts>
+    <IEcharts :option="chart" @mouseover="mouseOver"></IEcharts>
   </div>
 </template>
 
@@ -57,6 +57,11 @@
             }
           }]
         }
+      }
+    },
+    methods: {
+      mouseOver (ev, b, c) {
+        this.$emit('mouseover', ev)
       }
     }
   }
