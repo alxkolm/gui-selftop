@@ -1,16 +1,23 @@
 <template>
   <div>
-    <div style="width: 300px; float: left;">
-      <Donut v-bind:series-data="processDonut" title="Processes"></Donut>
-      <Donut v-bind:series-data="mclClusterDonut" title="Markov Clusters" @mouseover="onMclClusterMouseOver"></Donut>
-      <Donut v-bind:series-data="titleClusterDonut" title="Title Clusters" @mouseover="onTitleClusterMouseOver"></Donut>
-    </div>
-    <div>
-      <ul>
-        <li v-for="win in titleList">{{win.title}} [{{formatDuration(win.time)}}]</li>
-      </ul>
-    </div>
+    <v-layout row wrap>
+      <v-flex xs2>
+        <Donut v-bind:series-data="processDonut" title="Processes"></Donut>
+        <Donut v-bind:series-data="mclClusterDonut" title="Markov Clusters" @mouseover="onMclClusterMouseOver"></Donut>
+        <Donut v-bind:series-data="titleClusterDonut" title="Title Clusters" @mouseover="onTitleClusterMouseOver"></Donut>
+      </v-flex>
+      <v-flex xs3>
+        <div id="title-list">
+          <div v-for="win in titleList" class="title-item">
+            <div class="duration">{{formatDuration(win.time)}}</div>
+            <div class="win-title">{{win.title}}</div>
+          </div>
+        </div>
+      </v-flex>
+      <v-flex xs3>
 
+      </v-flex>
+    </v-layout>
   </div>
 </template>
 
@@ -124,5 +131,28 @@
   .echarts {
     width: 400px;
     height: 400px;
+  }
+
+  #title-list {
+    text-align: left;
+    font-size: 10px;
+  }
+
+  #title-list > div:nth-child(even) {
+    background-color: #444;
+  }
+  .title-item:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+  #title-list .duration {
+    width: 10%;
+    float: left;
+    display: inline-block;
+  }
+  #title-list .win-title {
+    width: 89%;
+    float: right;
   }
 </style>
