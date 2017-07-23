@@ -1,11 +1,13 @@
 <template>
   <div class="echarts">
     <IEcharts :option="chart" @mouseover="mouseOver"></IEcharts>
+    <div class="total">{{total()}}</div>
   </div>
 </template>
 
 <script>
   import IEcharts from 'vue-echarts-v3/src/full.vue'
+  import Helpers from '../helpers'
 
   export default {
     name: 'donut',
@@ -30,7 +32,11 @@
           },
           tooltip: {
             trigger: 'item',
-            formatter: '{b}: {c} ({d}%)'
+            formatter: (params) => {
+              let duration = Helpers.formatDuration(params.value)
+              let label = params.data.textLabel || params.name
+              return `${label}: ${duration} (${params.percent}%)`
+            }
           },
           series: [{
             name: this.seriesName,
@@ -43,7 +49,7 @@
                 show: true,
                 position: 'inner',
                 formatter: (params) => {
-                  return params.percent > 10 ? params.name : ''
+                  return params.percent > 10 ? params.data.textLabel || params.name : ''
                 }
               },
               emphasis: {
@@ -56,6 +62,12 @@
               }
             }
           }]
+        },
+        total: function () {
+          let total = this.seriesData.reduce((sum, value) => {
+            return sum + value.value
+          }, 0)
+          return Helpers.formatDuration(total)
         }
       }
     },
@@ -71,5 +83,12 @@
   .echarts {
     width: 300px;
     height: 300px;
+    position: relative;
+  }
+  .total {
+    position: absolute;
+    top:134px;
+    left: 100px;
+    width: 100px;
   }
 </style>
