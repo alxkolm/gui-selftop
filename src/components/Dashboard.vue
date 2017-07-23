@@ -3,6 +3,7 @@
     <v-layout row wrap>
       <v-flex xs2>
         <Donut v-bind:series-data="processDonut" title="Processes" @mouseover="onProcessMouseOver"></Donut>
+        <Donut v-bind:series-data="recordClusterDonut" title="Record Clusters" @mouseover="onRecordClusterMouseOver"></Donut>
         <Donut v-bind:series-data="mclClusterDonut" title="Markov Clusters" @mouseover="onMclClusterMouseOver"></Donut>
         <Donut v-bind:series-data="titleClusterDonut" title="Title Clusters" @mouseover="onTitleClusterMouseOver"></Donut>
       </v-flex>
@@ -35,7 +36,8 @@
         records: state => state.records,
         mclClusters: state => state.mclClusters,
         titleClusters: state => state.titleClusters,
-        windowsList: state => state.windowsList
+        windowsList: state => state.windowsList,
+        recordClusters: state => state.recordClusters
       }),
       processDonut: function () {
         const durations = this.records.reduce((sum, value) => {
@@ -75,6 +77,19 @@
           return b.value - a.value
         })
       },
+      recordClusterDonut: function () {
+        const durations = this.records.reduce((sum, value) => {
+          let clusterLabel = this.recordClusters[value.id]
+          if (sum[clusterLabel] === undefined) {
+            sum[clusterLabel] = {value: 0, name: clusterLabel}
+          }
+          sum[clusterLabel].value += value.duration
+          return sum
+        }, {})
+        return Object.values(durations).sort((a, b) => {
+          return b.value - a.value
+        })
+      },
       titleList: function () {
         console.log(this.windowsList)
         let a = this.windows.filter((win) => {
@@ -87,6 +102,12 @@
     methods: {
       onMclClusterMouseOver (d) {
         let windowIds = Object.entries(this.mclClusters).filter((a) => a[1] === d.data.name).map((a) => parseInt(a[0], 10))
+        this.setWindowsList(windowIds)
+      },
+      onRecordClusterMouseOver (d) {
+        let recordsIds = Object.entries(this.recordClusters).filter((a) => a[1] === d.data.name).map((a) => parseInt(a[0], 10))
+        let records = this.records.filter((a) => recordsIds.includes(a.id))
+        let windowIds = records.map((a) => a.window_id)
         this.setWindowsList(windowIds)
       },
       onTitleClusterMouseOver (d) {
