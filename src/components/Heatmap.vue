@@ -7,41 +7,28 @@
 <script>
   import IEcharts from 'vue-echarts-v3/src/full.vue'
 
-  const hours = ['12a', '1a', '2a', '3a', '4a', '5a', '6a',
-    '7a', '8a', '9a', '10a', '11a',
-    '12p', '1p', '2p', '3p', '4p', '5p',
-    '6p', '7p', '8p', '9p', '10p', '11p']
-
   export default {
     name: 'donut',
     components: {IEcharts},
-    props: ['seriesData', 'yLabels'],
-    watch: {
-      seriesData: function (data) {
-        // dirty hack, because chart don't draw on first data update
-        this.chart.series[0].data = data
-        this.chart.visualMap.max = Math.max(...data.map((a) => a[2])) || 100
+    props: ['seriesData', 'yLabels', 'xLabels'],
+    computed: {
+      minXIndex: function () {
+        return Math.min(...this.seriesData.map((a) => a[0])) || 0
       },
-      yLabels: function (data) {
-        this.chart.yAxis.data = data
-      }
-    },
-    data: function () {
-      return {
-        items: this.seriesName,
-        loading: false,
-        chart: {
+      maxXIndex: function () {
+        return Math.max(...this.seriesData.map((a) => a[0]))
+      },
+      chart: function () {
+        return {
           tooltip: {
             position: 'top'
           },
           animation: false,
-          grid: {
-            height: '50%',
-            y: '10%'
-          },
           xAxis: {
             type: 'category',
-            data: hours,
+            data: this.xLabels || [],
+            min: this.minXIndex,
+            max: this.maxXIndex,
             splitArea: {
               show: true
             },
@@ -67,9 +54,10 @@
             min: 0,
             max: 100,
             calculable: true,
-            orient: 'horizontal',
+            orient: 'vertical',
             left: 'center',
-            bottom: '15%'
+            bottom: 0,
+            show: false
           },
           series: [{
             name: 'Punch Card',
@@ -90,6 +78,11 @@
         }
       }
     },
+    data: function () {
+      return {
+        loading: false
+      }
+    },
     methods: {
       mouseOver (ev, b, c) {
         this.$emit('mouseover', ev)
@@ -101,7 +94,7 @@
 <style scoped>
   .echarts {
     width: 700px;
-    height: 700px;
+    height: 500px;
     position: relative;
   }
 </style>

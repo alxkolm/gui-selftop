@@ -1,7 +1,7 @@
 <template>
   <div class="echarts">
     <IEcharts :option="chart" @mouseover="mouseOver"></IEcharts>
-    <div class="total">{{total()}}</div>
+    <div class="total">{{total}}</div>
   </div>
 </template>
 
@@ -19,11 +19,15 @@
         this.chart.series[0].data = data
       }
     },
-    data: function () {
-      return {
-        items: this.seriesName,
-        loading: false,
-        chart: {
+    computed: {
+      total: function () {
+        let total = this.seriesData.reduce((sum, value) => {
+          return sum + value.value
+        }, 0)
+        return Helpers.formatDuration(total)
+      },
+      chart: function () {
+        return {
           title: {
             text: this.title,
             textStyle: {
@@ -62,13 +66,12 @@
               }
             }
           }]
-        },
-        total: function () {
-          let total = this.seriesData.reduce((sum, value) => {
-            return sum + value.value
-          }, 0)
-          return Helpers.formatDuration(total)
         }
+      }
+    },
+    data: function () {
+      return {
+        loading: false
       }
     },
     methods: {

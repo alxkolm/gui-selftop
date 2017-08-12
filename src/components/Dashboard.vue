@@ -20,7 +20,7 @@
         </v-layout>
       </v-flex>
       <v-flex xs4>
-        <Heatmap v-bind:series-data="recordClusterHeat.series" v-bind:y-labels="recordClusterHeat.ylabels"/>
+        <Heatmap v-bind:series-data="recordClusterHeat.series" v-bind:y-labels="recordClusterHeat.ylabels" v-bind:x-labels="recordClusterHeat.xlabels"/>
         <Heatmap v-bind:series-data="mclClusterHeat.series" v-bind:y-labels="mclClusterHeat.ylabels"/>
       </v-flex>
       <v-flex xs5>
@@ -129,28 +129,35 @@
       recordClusterHeat: function () {
         let durations = this.records.reduce((sum, record) => {
           let clusterId = this.recordClusters[record.id]
-          let hour = moment(record.start).hour()
+          let startMoment = moment(record.start)
+          let grain = Math.floor((startMoment.hour() * 60 + startMoment.minute()) / 15)
           if (sum[clusterId] === undefined) {
             sum[clusterId] = {}
           }
 
-          if (sum[clusterId][hour] === undefined) {
-            sum[clusterId][hour] = 0
+          if (sum[clusterId][grain] === undefined) {
+            sum[clusterId][grain] = 0
           }
 
-          sum[clusterId][hour] += record.duration
+          sum[clusterId][grain] += record.duration
 
           return sum
         }, {})
         let clusterList = Object.keys(durations)
-        let data = Object.entries(durations).reduce((sum, [cluster, hours]) => {
-          Object.entries(hours).reduce((sum, [hour, duration]) => {
-            sum.push([parseInt(hour), clusterList.indexOf(cluster), duration])
+        let data = Object.entries(durations).reduce((sum, [cluster, grains]) => {
+          Object.entries(grains).reduce((sum, [grain, duration]) => {
+            sum.push([parseInt(grain), clusterList.indexOf(cluster), duration])
             return sum
           }, sum)
           return sum
         }, [])
-        return {series: data, ylabels: clusterList}
+        let grainLabels = []
+        for (let i = 0; i < 24 * 4; i++) {
+          let delta = i * 15
+          let label = moment().startOf('day').add(delta, 'minutes').format('HH:mm')
+          grainLabels.push(label)
+        }
+        return {series: data, ylabels: clusterList, xlabels: grainLabels}
       },
       mclClusterHeat: function () {
         let durations = this.records.reduce((sum, record) => {
@@ -182,7 +189,13 @@
     methods: {
       onMclClusterMouseOver (d) {
         let windowIds = Object.entries(this.mclClusters).filter((a) => a[1] === d.data.name).map((a) => parseInt(a[0], 10))
-        this.setWindowsList(windowIds)
+        let recordsIds = this.records.reduce((sum, record) => {
+          if (windowIds.includes(record.window_id)) {
+            sum.push(record.id)
+          }
+          return sum
+        }, [])
+        this.setRecordsList(recordsIds)
       },
       onRecordClusterMouseOver (d) {
         let recordsIds = Object.entries(this.recordClusters).filter((a) => a[1] === d.data.name).map((a) => parseInt(a[0], 10))
@@ -190,12 +203,23 @@
       },
       onTitleClusterMouseOver (d) {
         let windowIds = Object.entries(this.titleClusters).filter((a) => a[1] === d.data.name).map((a) => parseInt(a[0], 10))
-        this.setWindowsList(windowIds)
+        let recordsIds = this.records.reduce((sum, record) => {
+          if (windowIds.includes(record.window_id)) {
+            sum.push(record.id)
+          }
+          return sum
+        }, [])
+        this.setRecordsList(recordsIds)
       },
       onProcessMouseOver (d) {
-        console.log('d.data.name', d.data.name)
         let windowIds = this.windows.filter((a) => a.process_id === d.data.name).map((a) => a.id)
-        this.setWindowsList(windowIds)
+        let recordsIds = this.records.reduce((sum, record) => {
+          if (windowIds.includes(record.window_id)) {
+            sum.push(record.id)
+          }
+          return sum
+        }, [])
+        this.setRecordsList(recordsIds)
       },
       ...mapMutations([
         'setWindowsList',
