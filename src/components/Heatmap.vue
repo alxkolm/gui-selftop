@@ -23,7 +23,6 @@
         this.chart.visualMap.max = Math.max(...data.map((a) => a[2])) || 100
       },
       yLabels: function (data) {
-        console.log('fff', data)
         this.chart.yAxis.data = data
       }
     },

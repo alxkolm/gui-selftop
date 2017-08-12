@@ -110,10 +110,7 @@
         })
       },
       titleList: function () {
-        console.log('sss', this.$store.getters)
-        console.log('this.getWindowsMap', this.windowsMap)
         let winList
-        console.log('this.recordsList', this.recordsList)
         winList = this.records.reduce((sum, record) => {
           if (!this.recordsList.includes(record.id)) {
             return sum
@@ -125,10 +122,8 @@
           sum[windowId].time += record.duration
           return sum
         }, {})
-        console.log('winList', winList)
         winList = Object.values(winList)
         winList.sort((a, b) => b.time - a.time)
-        console.log('winList', winList)
         return winList
       },
       recordClusterHeat: function () {
@@ -191,7 +186,6 @@
       },
       onRecordClusterMouseOver (d) {
         let recordsIds = Object.entries(this.recordClusters).filter((a) => a[1] === d.data.name).map((a) => parseInt(a[0], 10))
-        console.log(recordsIds)
         this.setRecordsList(recordsIds)
       },
       onTitleClusterMouseOver (d) {
