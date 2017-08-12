@@ -10,5 +10,9 @@ export default {
 
   setWindowsList (state, newData) {
     state.windowsList = newData
+  },
+
+  setRecordsList (state, newData) {
+    state.recordsList = newData
   }
 }

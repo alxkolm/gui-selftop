@@ -1,31 +1,46 @@
 <template>
   <div>
     <v-layout row wrap>
-      <v-flex xs2>
-        <Donut v-bind:series-data="processDonut" title="Processes" @mouseover="onProcessMouseOver"></Donut>
-        <Donut v-bind:series-data="recordClusterDonut" title="Record Clusters" @mouseover="onRecordClusterMouseOver"></Donut>
-        <Donut v-bind:series-data="mclClusterDonut" title="Markov Clusters" @mouseover="onMclClusterMouseOver"></Donut>
-        <Donut v-bind:series-data="titleClusterDonut" title="Title Clusters" @mouseover="onTitleClusterMouseOver"></Donut>
-      </v-flex>
       <v-flex xs3>
+        <v-layout row>
+          <v-flex xs6>
+            <Donut v-bind:series-data="processDonut" title="Processes" @mouseover="onProcessMouseOver"></Donut>
+          </v-flex>
+          <v-flex xs6>
+            <Donut v-bind:series-data="recordClusterDonut" title="Record Clusters" @mouseover="onRecordClusterMouseOver"></Donut>
+          </v-flex>
+        </v-layout>
+        <v-layout row>
+          <v-flex xs6>
+            <Donut v-bind:series-data="mclClusterDonut" title="Markov Clusters" @mouseover="onMclClusterMouseOver"></Donut>
+          </v-flex>
+          <v-flex xs6>
+            <Donut v-bind:series-data="titleClusterDonut" title="Title Clusters" @mouseover="onTitleClusterMouseOver"></Donut>
+          </v-flex>
+        </v-layout>
+      </v-flex>
+      <v-flex xs4>
+        <Heatmap v-bind:series-data="recordClusterHeat.series" v-bind:y-labels="recordClusterHeat.ylabels"/>
+        <Heatmap v-bind:series-data="mclClusterHeat.series" v-bind:y-labels="mclClusterHeat.ylabels"/>
+      </v-flex>
+      <v-flex xs5>
         <div id="title-list">
           <div v-for="win in titleList" class="title-item">
             <div class="duration">{{formatDuration(win.time)}}</div>
-            <div class="win-title">{{win.title}}</div>
+            <div class="win-title">{{win.title}} (#{{win.id}})</div>
           </div>
         </div>
-      </v-flex>
-      <v-flex xs3>
-
       </v-flex>
     </v-layout>
   </div>
 </template>
 
 <script>
-  import {mapState, mapMutations} from 'vuex'
+  import {mapState, mapMutations, mapGetters} from 'vuex'
   import Donut from './Donut.vue'
+  import Heatmap from './Heatmap.vue'
   import Helpers from '../helpers'
+  import moment from 'moment'
 
   export default {
     name: 'dashboard',
@@ -37,8 +52,12 @@
         mclClusters: state => state.mclClusters,
         titleClusters: state => state.titleClusters,
         windowsList: state => state.windowsList,
+        recordsList: state => state.recordsList,
         recordClusters: state => state.recordClusters
       }),
+      ...mapGetters([
+        'windowsMap'
+      ]),
       processDonut: function () {
         const durations = this.records.reduce((sum, value) => {
           if (sum[value.process_id] === undefined) {
@@ -91,12 +110,78 @@
         })
       },
       titleList: function () {
-        console.log(this.windowsList)
-        let a = this.windows.filter((win) => {
-          return this.windowsList.includes(win.id)
-        }).sort((a, b) => b.time - a.time)
-        console.log('titleList', a)
-        return a
+        console.log('sss', this.$store.getters)
+        console.log('this.getWindowsMap', this.windowsMap)
+        let winList
+        console.log('this.recordsList', this.recordsList)
+        winList = this.records.reduce((sum, record) => {
+          if (!this.recordsList.includes(record.id)) {
+            return sum
+          }
+          let windowId = record.window_id
+          if (!(windowId in sum)) {
+            sum[windowId] = { id: windowId, time: 0, title: this.windowsMap && windowId in this.windowsMap ? this.windowsMap[windowId].title : '' }
+          }
+          sum[windowId].time += record.duration
+          return sum
+        }, {})
+        console.log('winList', winList)
+        winList = Object.values(winList)
+        winList.sort((a, b) => b.time - a.time)
+        console.log('winList', winList)
+        return winList
+      },
+      recordClusterHeat: function () {
+        let durations = this.records.reduce((sum, record) => {
+          let clusterId = this.recordClusters[record.id]
+          let hour = moment(record.start).hour()
+          if (sum[clusterId] === undefined) {
+            sum[clusterId] = {}
+          }
+
+          if (sum[clusterId][hour] === undefined) {
+            sum[clusterId][hour] = 0
+          }
+
+          sum[clusterId][hour] += record.duration
+
+          return sum
+        }, {})
+        let clusterList = Object.keys(durations)
+        let data = Object.entries(durations).reduce((sum, [cluster, hours]) => {
+          Object.entries(hours).reduce((sum, [hour, duration]) => {
+            sum.push([parseInt(hour), clusterList.indexOf(cluster), duration])
+            return sum
+          }, sum)
+          return sum
+        }, [])
+        return {series: data, ylabels: clusterList}
+      },
+      mclClusterHeat: function () {
+        let durations = this.records.reduce((sum, record) => {
+          let clusterId = this.mclClusters[record.window_id]
+          let hour = moment(record.start).hour()
+          if (sum[clusterId] === undefined) {
+            sum[clusterId] = {}
+          }
+
+          if (sum[clusterId][hour] === undefined) {
+            sum[clusterId][hour] = 0
+          }
+
+          sum[clusterId][hour] += record.duration
+
+          return sum
+        }, {})
+        let clusterList = Object.keys(durations)
+        let data = Object.entries(durations).reduce((sum, [cluster, hours]) => {
+          Object.entries(hours).reduce((sum, [hour, duration]) => {
+            sum.push([parseInt(hour), clusterList.indexOf(cluster), duration])
+            return sum
+          }, sum)
+          return sum
+        }, [])
+        return {series: data, ylabels: clusterList}
       }
     },
     methods: {
@@ -106,9 +191,8 @@
       },
       onRecordClusterMouseOver (d) {
         let recordsIds = Object.entries(this.recordClusters).filter((a) => a[1] === d.data.name).map((a) => parseInt(a[0], 10))
-        let records = this.records.filter((a) => recordsIds.includes(a.id))
-        let windowIds = records.map((a) => a.window_id)
-        this.setWindowsList(windowIds)
+        console.log(recordsIds)
+        this.setRecordsList(recordsIds)
       },
       onTitleClusterMouseOver (d) {
         let windowIds = Object.entries(this.titleClusters).filter((a) => a[1] === d.data.name).map((a) => parseInt(a[0], 10))
@@ -120,12 +204,14 @@
         this.setWindowsList(windowIds)
       },
       ...mapMutations([
-        'setWindowsList'
+        'setWindowsList',
+        'setRecordsList'
       ]),
       formatDuration: (seconds) => Helpers.formatDuration(seconds)
     },
     components: {
-      Donut
+      Donut,
+      Heatmap
     }
   }
 </script>
@@ -138,7 +224,7 @@
 
   #title-list {
     text-align: left;
-    font-size: 10px;
+    font-size: 12px;
   }
 
   #title-list > div:nth-child(even) {
